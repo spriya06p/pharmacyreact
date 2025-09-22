@@ -1,62 +1,63 @@
-import React, { useEffect, useState } from 'react';
-import api from '../api/axios';
+import { useEffect, useState } from "react";
+import { getMedicines, createMedicine, updateMedicine, deleteMedicine } from "../api/inventoryApi";
 
-export default function Inventory(){
-  const [stocks, setStocks] = useState([]);
-  const [form, setForm] = useState({ name: '', batchNo: '', dosage:'', quantity:0, unitPrice:0, expiryDate: '' });
+export default function Inventory() {
+  const [medicines, setMedicines] = useState([]);
+  const [form, setForm] = useState({ name: "", brand_name: "", chemical_name: "", dosage: "", manufacture_date: "", expiry_date: "", description: "" });
 
-  const load = async () => {
-    try {
-      // use pharmacyId 1 for demo
-      const res = await api.get('/inventory/1/stocks');
-      setStocks(res.data);
-    } catch (err) {
-      console.error(err);
-      alert('Failed to load stocks');
-    }
+  const fetchMedicines = async () => {
+    const data = await getMedicines();
+    setMedicines(data);
   };
 
-  useEffect(()=>{ load(); }, []);
+  useEffect(() => { fetchMedicines(); }, []);
 
-  const submit = async (e) => {
+  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+
+  const handleCreate = async (e) => {
     e.preventDefault();
-    try {
-      await api.post('/inventory/1/stocks', {
-        ...form
-      });
-      setForm({ name:'', batchNo:'', dosage:'', quantity:0, unitPrice:0, expiryDate:'' });
-      load();
-    } catch (err) {
-      console.error(err);
-      alert('Failed to add stock. Make sure you are logged in as PHARMACY.');
-    }
+    await createMedicine(form);
+    setForm({ name: "", brand_name: "", chemical_name: "", dosage: "", manufacture_date: "", expiry_date: "", description: "" });
+    fetchMedicines();
   };
+
+  const handleDelete = async (id) => { await deleteMedicine(id); fetchMedicines(); };
 
   return (
-    <div style={{ padding: 20 }}>
-      <h2>Inventory (Pharmacy 1)</h2>
+    <div className="p-6">
+      <h1 className="text-2xl font-bold mb-4">Inventory</h1>
 
-      <form onSubmit={submit} style={{ marginBottom: 20 }}>
-        <div><input placeholder="Medicine name" value={form.name} onChange={e=>setForm({...form, name:e.target.value})} /></div>
-        <div><input placeholder="Batch no" value={form.batchNo} onChange={e=>setForm({...form, batchNo:e.target.value})} /></div>
-        <div><input placeholder="Dosage" value={form.dosage} onChange={e=>setForm({...form, dosage:e.target.value})} /></div>
-        <div><input placeholder="Quantity" type="number" value={form.quantity} onChange={e=>setForm({...form, quantity:parseInt(e.target.value||0)})} /></div>
-        <div><input placeholder="Unit price" type="number" value={form.unitPrice} onChange={e=>setForm({...form, unitPrice:parseFloat(e.target.value||0)})} /></div>
-        <div><input placeholder="Expiry date (YYYY-MM-DD)" value={form.expiryDate} onChange={e=>setForm({...form, expiryDate:e.target.value})} /></div>
-        <button type="submit">Add Stock</button>
+      <form onSubmit={handleCreate} className="mb-6 grid gap-2 grid-cols-2">
+        <input placeholder="Name" name="name" value={form.name} onChange={handleChange} className="border p-2 rounded"/>
+        <input placeholder="Brand" name="brand_name" value={form.brand_name} onChange={handleChange} className="border p-2 rounded"/>
+        <input placeholder="Chemical Name" name="chemical_name" value={form.chemical_name} onChange={handleChange} className="border p-2 rounded"/>
+        <input placeholder="Dosage" name="dosage" value={form.dosage} onChange={handleChange} className="border p-2 rounded"/>
+        <input type="date" placeholder="Manufacture Date" name="manufacture_date" value={form.manufacture_date} onChange={handleChange} className="border p-2 rounded"/>
+        <input type="date" placeholder="Expiry Date" name="expiry_date" value={form.expiry_date} onChange={handleChange} className="border p-2 rounded"/>
+        <input placeholder="Description" name="description" value={form.description} onChange={handleChange} className="border p-2 rounded col-span-2"/>
+        <button type="submit" className="bg-blue-500 text-white p-2 rounded col-span-2">Add Medicine</button>
       </form>
 
-      <table border="1" cellPadding="6">
-        <thead><tr><th>Medicine</th><th>Batch</th><th>Dosage</th><th>Qty</th><th>Price</th><th>Expiry</th></tr></thead>
+      <table className="w-full border-collapse border border-gray-300">
+        <thead>
+          <tr>
+            <th className="border p-2">Name</th>
+            <th className="border p-2">Brand</th>
+            <th className="border p-2">Dosage</th>
+            <th className="border p-2">Expiry</th>
+            <th className="border p-2">Actions</th>
+          </tr>
+        </thead>
         <tbody>
-          {stocks.map(s => (
-            <tr key={s.id}>
-              <td>{s.Medicine?.name || '—'}</td>
-              <td>{s.batchNo}</td>
-              <td>{s.dosage}</td>
-              <td>{s.quantity}</td>
-              <td>{s.unitPrice}</td>
-              <td>{s.expiryDate}</td>
+          {medicines.map(m => (
+            <tr key={m.id}>
+              <td className="border p-2">{m.name}</td>
+              <td className="border p-2">{m.brand_name}</td>
+              <td className="border p-2">{m.dosage}</td>
+              <td className="border p-2">{new Date(m.expiry_date).toLocaleDateString()}</td>
+              <td className="border p-2">
+                <button onClick={() => handleDelete(m.id)} className="bg-red-500 text-white px-2 py-1 rounded">Delete</button>
+              </td>
             </tr>
           ))}
         </tbody>

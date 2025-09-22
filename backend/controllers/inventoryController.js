@@ -1,29 +1,47 @@
-const { Medicine, MedicineStock } = require('../models');
+const Medicine = require("../models/medicine");
 
-// Add stock (create medicine if needed)
-exports.addStock = async (req, res) => {
+// Create medicine
+exports.createMedicine = async (req, res) => {
   try {
-    const pharmacyId = parseInt(req.params.pharmacyId, 10);
-    const { name, chemicalName, brandName, description, batchNo, dosage, quantity, unitPrice, manufactureDate, expiryDate, vendorId } = req.body;
-    let med = await Medicine.findOne({ where: { name }});
-    if(!med) med = await Medicine.create({ name, chemicalName, brandName, description });
-    const stock = await MedicineStock.create({
-      pharmacyId, medicineId: med.id, batchNo, dosage, quantity, unitPrice, manufactureDate, expiryDate, vendorId
-    });
-    res.json(stock);
+    const medicine = await Medicine.create(req.body);
+    res.json(medicine);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
+    res.status(500).json({ error: err.message });
   }
 };
 
-exports.listStocks = async (req, res) => {
+// Get all medicines
+exports.getMedicines = async (req, res) => {
   try {
-    const pharmacyId = parseInt(req.params.pharmacyId, 10);
-    const stocks = await MedicineStock.findAll({ where: { pharmacyId }, include: Medicine });
-    res.json(stocks);
+    const medicines = await Medicine.findAll();
+    res.json(medicines);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Update medicine
+exports.updateMedicine = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const medicine = await Medicine.findByPk(id);
+    if (!medicine) return res.status(404).json({ message: "Medicine not found" });
+    await medicine.update(req.body);
+    res.json(medicine);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Delete medicine
+exports.deleteMedicine = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const medicine = await Medicine.findByPk(id);
+    if (!medicine) return res.status(404).json({ message: "Medicine not found" });
+    await medicine.destroy();
+    res.json({ message: "Medicine deleted" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 };
